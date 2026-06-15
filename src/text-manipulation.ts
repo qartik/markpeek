@@ -47,6 +47,17 @@ function currentLine(value: string, selectionStart: number): string {
   ];
 }
 
+function lineBounds(value: string, start: number, end: number): [number, number] {
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  let lineEnd = value.indexOf("\n", end);
+
+  if (lineEnd === -1) {
+    lineEnd = value.length;
+  }
+
+  return [lineStart, lineEnd];
+}
+
 function dispatchInput(textarea: HTMLTextAreaElement): void {
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
@@ -254,8 +265,26 @@ export class LocalTextManipulation {
     }
   }
 
-  applyHeading(level = 2): void {
-    this.applyList(`${"#".repeat(level)} `, "heading_text", true);
+  applyHeading(): void {
+    const selection = this.getSelected();
+    const [start, end] = lineBounds(this.value, selection.start, selection.end);
+    const selectedLines = this.value.slice(start, end);
+    const isEmptyLine = selectedLines.length === 0;
+    const replacement = isEmptyLine
+      ? "# Heading"
+      : selectedLines
+          .split("\n")
+          .map((line) => this.nextHeadingLine(line))
+          .join("\n");
+
+    this.insertAt(start, end, replacement);
+
+    if (isEmptyLine) {
+      this.selectText(start + 2, EXAMPLES.heading_text.length);
+      return;
+    }
+
+    this.selectText(start, replacement.length);
   }
 
   applyLink(): void {
@@ -369,6 +398,24 @@ export class LocalTextManipulation {
         return result;
       })
       .join("\n");
+  }
+
+  private nextHeadingLine(line: string): string {
+    if (line.length === 0) {
+      return line;
+    }
+
+    const match = /^(#{1,6})\s+(.*)$/.exec(line);
+    if (!match) {
+      return `# ${line}`;
+    }
+
+    const [, hashes, text] = match;
+    if (hashes.length === 6) {
+      return text;
+    }
+
+    return `${"#".repeat(hashes.length + 1)} ${text}`;
   }
 
   private insertAt(start: number, end: number, text: string): void {

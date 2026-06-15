@@ -1,7 +1,7 @@
 import {
   Bold,
   Code,
-  Heading2,
+  Heading,
   Italic,
   Link,
   List,
@@ -50,11 +50,16 @@ const toolbarItems: Array<{
   { action: "bold", label: "Bold", icon: Bold, shortcut: "Mod+B" },
   { action: "italic", label: "Italic", icon: Italic, shortcut: "Mod+I" },
   { action: "link", label: "Link", icon: Link, shortcut: "Mod+K" },
-  { action: "quote", label: "Quote", icon: Quote },
+  { action: "quote", label: "Quote", icon: Quote, shortcut: "Shift+Mod+Q" },
   { action: "code", label: "Code", icon: Code, shortcut: "Mod+E" },
   { action: "bullet-list", label: "Bullet list", icon: List },
   { action: "numbered-list", label: "Numbered list", icon: ListOrdered },
-  { action: "heading", label: "Heading", icon: Heading2 },
+  {
+    action: "heading",
+    label: "Cycle heading level",
+    icon: Heading,
+    shortcut: "Shift+Mod+H",
+  },
 ];
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
@@ -158,29 +163,7 @@ attachPasteHandler(editor, textManipulation);
 editor.addEventListener("input", updatePreview);
 
 editor.addEventListener("keydown", (event) => {
-  const isMod = event.metaKey || event.ctrlKey;
-
-  if (!isMod) {
-    return;
-  }
-
-  const key = event.key.toLowerCase();
-  const action =
-    key === "z" && !event.shiftKey
-      ? "undo"
-      : key === "z" && event.shiftKey
-        ? "redo"
-        : key === "y"
-          ? "redo"
-          : key === "b"
-            ? "bold"
-            : key === "i"
-              ? "italic"
-              : key === "k"
-                ? "link"
-                : key === "e"
-                  ? "code"
-                  : null;
+  const action = keyboardAction(event);
 
   if (!action) {
     return;
@@ -214,4 +197,45 @@ function performAction(action: string): void {
   }
 
   textManipulation.apply(action as FormatAction);
+}
+
+function keyboardAction(event: KeyboardEvent): string | null {
+  if (!event.metaKey && !event.ctrlKey) {
+    return null;
+  }
+
+  const key = event.key.toLowerCase();
+
+  if (key === "z" && !event.shiftKey) {
+    return "undo";
+  }
+
+  if ((key === "z" && event.shiftKey) || key === "y") {
+    return "redo";
+  }
+
+  if (key === "q" && event.shiftKey) {
+    return "quote";
+  }
+
+  if (key === "h" && event.shiftKey) {
+    return "heading";
+  }
+
+  if (event.shiftKey) {
+    return null;
+  }
+
+  switch (key) {
+    case "b":
+      return "bold";
+    case "i":
+      return "italic";
+    case "k":
+      return "link";
+    case "e":
+      return "code";
+    default:
+      return null;
+  }
 }
