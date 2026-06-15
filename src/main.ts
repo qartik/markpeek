@@ -50,7 +50,7 @@ const toolbarItems: Array<{
   { action: "bold", label: "Bold", icon: Bold, shortcut: "Mod+B" },
   { action: "italic", label: "Italic", icon: Italic, shortcut: "Mod+I" },
   { action: "link", label: "Link", icon: Link, shortcut: "Mod+K" },
-  { action: "quote", label: "Quote", icon: Quote, shortcut: "Shift+Mod+Q" },
+  { action: "quote", label: "Quote", icon: Quote, shortcut: "Mod+Shift+9" },
   { action: "code", label: "Code", icon: Code, shortcut: "Mod+E" },
   { action: "bullet-list", label: "Bullet list", icon: List },
   { action: "numbered-list", label: "Numbered list", icon: ListOrdered },
@@ -214,7 +214,7 @@ function keyboardAction(event: KeyboardEvent): string | null {
     return "redo";
   }
 
-  if (key === "q" && event.shiftKey) {
+  if (event.shiftKey && (key === "(" || event.code === "Digit9")) {
     return "quote";
   }
 
