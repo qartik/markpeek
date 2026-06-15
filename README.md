@@ -29,8 +29,8 @@ sync, forum APIs, or any Discourse server behavior.
 
 The toolbar covers the Markdown actions used most while drafting:
 
-- Bold, italic, link, quote, inline/code block, bullet list, numbered list, and
-  heading cycling.
+- Bold, italic, link, image by URL, quote, inline/code block, bullet list,
+  numbered list, and heading cycling.
 - Undo and redo for both typing and toolbar actions.
 - Scroll sync between the editor and preview for longer drafts.
 

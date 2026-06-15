@@ -2,6 +2,7 @@ export type FormatAction =
   | "bold"
   | "italic"
   | "link"
+  | "image"
   | "quote"
   | "code"
   | "bullet-list"
@@ -23,6 +24,8 @@ const EXAMPLES: Record<string, string> = {
   bold_text: "strong text",
   code_title: "code",
   heading_text: "Heading",
+  image_alt_text: "image description",
+  image_url: "https://example.com/image.png",
   italic_text: "emphasized text",
   link_text: "link text",
   list_item: "list item",
@@ -60,6 +63,10 @@ function lineBounds(value: string, start: number, end: number): [number, number]
 
 function dispatchInput(textarea: HTMLTextAreaElement): void {
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function isLikelyUrl(value: string): boolean {
+  return /^https?:\/\/\S+$/i.test(value.trim());
 }
 
 export class LocalTextManipulation {
@@ -300,6 +307,25 @@ export class LocalTextManipulation {
     }
   }
 
+  applyImage(): void {
+    const selection = this.getSelected(true);
+    const selectedValue = selection.value.trim();
+    const selectedUrl = isLikelyUrl(selectedValue);
+    const alt = selectedUrl
+      ? EXAMPLES.image_alt_text
+      : selectedValue || EXAMPLES.image_alt_text;
+    const url = selectedUrl ? selectedValue : EXAMPLES.image_url;
+    const replacement = `![${alt}](${url})`;
+    const urlStart = replacement.indexOf(url);
+
+    this.insertAt(selection.start, selection.end, replacement);
+    if (selectedUrl) {
+      this.selectText(selection.start + 2, alt.length);
+    } else {
+      this.selectText(selection.start + urlStart, url.length);
+    }
+  }
+
   formatCode(): void {
     const selection = this.getSelected(false);
     const hasNewLine = selection.value.includes("\n");
@@ -332,6 +358,9 @@ export class LocalTextManipulation {
         break;
       case "link":
         this.applyLink();
+        break;
+      case "image":
+        this.applyImage();
         break;
       case "quote":
         this.applyList("> ", "blockquote_text");
