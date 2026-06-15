@@ -19,4 +19,5 @@ Parts of the editor behavior intentionally mirror decisions from
 - Cooked-preview conventions such as `div.md-table` table wrapping and `lang-*`
   code classes.
 
-No project license has been selected yet.
+The Markdown and GitHub brand icons are from
+[Font Awesome Free](https://fontawesome.com/icons).

@@ -6,8 +6,8 @@
   --primary-medium: light-dark(#6b7280, #a7b1bd);
   --primary-low: light-dark(#d9dee5, #3a4450);
   --primary-very-low: light-dark(#eef1f5, #252c34);
-  --tertiary: light-dark(#1675b9, #6db7f2);
-  --tertiary-hover: light-dark(#0f5d96, #92c9f6);
+  --tertiary: light-dark(#08c, #6db7f2);
+  --tertiary-hover: light-dark(#0077b8, #92c9f6);
   --hljs-bg: light-dark(#f6f8fa, #1f252d);
   font-family:
     Inter,
@@ -44,20 +44,77 @@ textarea {
 
 .markdown-previewer__header {
   padding: 1rem clamp(1rem, 3vw, 2rem);
-  border-block-end: 1px solid var(--primary-low);
+  border-block-end: 3px solid var(--tertiary);
   background: var(--secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.markdown-previewer__header-copy {
+  min-inline-size: 0;
 }
 
 .markdown-previewer__title {
   margin: 0;
+  color: var(--primary);
   font-size: 1.35rem;
   font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  line-height: 1.2;
+}
+
+.markdown-previewer__title-icon {
+  display: inline-grid;
+  place-items: center;
+  color: var(--tertiary);
+  block-size: 1.2em;
+}
+
+.markdown-previewer__title-icon svg {
+  display: block;
 }
 
 .markdown-previewer__subtitle {
   margin: 0.15rem 0 0;
   color: var(--primary-medium);
   font-size: 0.9rem;
+}
+
+.markdown-previewer__header-links {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem 0.75rem;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.markdown-previewer__header-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  color: var(--tertiary);
+  font-size: 0.86rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+  text-decoration: none;
+}
+
+.markdown-previewer__header-links a:hover,
+.markdown-previewer__header-links a:focus-visible {
+  color: var(--tertiary-hover);
+  background: light-dark(#e6f5fb, #123041);
+  text-decoration: none;
+}
+
+.markdown-previewer__header-links a:focus-visible {
+  outline: 2px solid var(--tertiary);
+  outline-offset: 0.2rem;
 }
 
 .markdown-previewer__workspace {
@@ -89,11 +146,12 @@ textarea {
   gap: 0.75rem;
   padding: 0.625rem 0.75rem;
   border-block-end: 1px solid var(--primary-low);
+  background: light-dark(#fbfcfd, #151a20);
 }
 
 .markdown-previewer__pane-title {
   margin: 0;
-  color: var(--primary-medium);
+  color: var(--tertiary);
   font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -128,7 +186,7 @@ textarea {
 .markdown-previewer__toolbar-button:hover,
 .markdown-previewer__toolbar-button:focus-visible {
   color: var(--tertiary-hover);
-  background: var(--primary-very-low);
+  background: light-dark(#ecfdf5, #16302c);
   border-color: var(--primary-low);
 }
 
@@ -179,7 +237,7 @@ textarea {
 .cooked blockquote {
   margin-inline: 0;
   padding: 0.25rem 0 0.25rem 0.875rem;
-  border-inline-start: 5px solid var(--primary-low);
+  border-inline-start: 5px solid var(--tertiary);
   color: var(--primary-medium);
 }
 
@@ -226,10 +284,22 @@ textarea {
 }
 
 .md-table th {
-  background: var(--primary-very-low);
+  background: light-dark(#ecfdf5, #17312d);
 }
 
 @media (max-width: 48rem) {
+  .markdown-previewer__header {
+    align-items: flex-start;
+    position: relative;
+    padding-inline-end: 4rem;
+  }
+
+  .markdown-previewer__header-links {
+    position: absolute;
+    inset-block-start: 0.85rem;
+    inset-inline-end: clamp(1rem, 3vw, 2rem);
+  }
+
   .markdown-previewer__workspace {
     display: flex;
     flex-direction: column;
