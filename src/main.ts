@@ -8,8 +8,6 @@ import {
   List,
   ListOrdered,
   Quote,
-  Redo2,
-  Undo2,
   createElement,
   type IconNode,
 } from "lucide";
@@ -85,7 +83,6 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <div class="markdown-previewer__pane-header">
           <h2 id="editor-heading" class="markdown-previewer__pane-title">Editor</h2>
           <div class="markdown-previewer__toolbar" role="toolbar" aria-label="Formatting tools">
-            <div class="markdown-previewer__toolbar-group" data-toolbar-group="history"></div>
             <div class="markdown-previewer__toolbar-group" data-toolbar-group="formatting"></div>
           </div>
         </div>
@@ -108,9 +105,6 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 const toolbar = document.querySelector<HTMLDivElement>(
   ".markdown-previewer__toolbar",
 )!;
-const historyToolbar = document.querySelector<HTMLDivElement>(
-  '[data-toolbar-group="history"]',
-)!;
 const formattingToolbar = document.querySelector<HTMLDivElement>(
   '[data-toolbar-group="formatting"]',
 )!;
@@ -124,13 +118,6 @@ const textManipulation = new LocalTextManipulation(editor);
 const history = new EditorHistory(editor);
 
 function renderToolbar(): void {
-  [
-    { action: "undo", label: "Undo", icon: Undo2, shortcut: "Mod+Z" },
-    { action: "redo", label: "Redo", icon: Redo2, shortcut: "Shift+Mod+Z" },
-  ].forEach(({ action, label, icon, shortcut }) => {
-    historyToolbar.append(toolbarButton(action, label, icon, shortcut));
-  });
-
   toolbarItems.forEach(({ action, label, icon, shortcut }) => {
     formattingToolbar.append(toolbarButton(action, label, icon, shortcut));
   });
