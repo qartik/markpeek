@@ -14,6 +14,7 @@ import {
 } from "lucide";
 import { EditorHistory } from "./history";
 import { renderMarkdown } from "./markdown";
+import { attachPasteHandler } from "./paste";
 import { syncScrolling } from "./scroll-sync";
 import { loadDraft, saveDraft } from "./storage";
 import { LocalTextManipulation, type FormatAction } from "./text-manipulation";
@@ -152,6 +153,7 @@ renderToolbar();
 editor.value = loadDraft(DEFAULT_DRAFT);
 updatePreview();
 syncScrolling(editor, preview);
+attachPasteHandler(editor, textManipulation);
 
 editor.addEventListener("input", updatePreview);
 

@@ -8,10 +8,13 @@
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
+    "@types/turndown": "^5.0.6",
     "dompurify": "^3.3.1",
     "highlight.js": "^11.11.1",
     "lucide": "^0.561.0",
-    "markdown-it": "^14.1.0"
+    "markdown-it": "^14.1.0",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "devDependencies": {
     "@types/markdown-it": "^14.1.2",

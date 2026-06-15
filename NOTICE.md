@@ -14,6 +14,8 @@ Parts of the editor behavior intentionally mirror decisions from
 - Composer-style Markdown toolbar behavior.
 - Textarea-first text manipulation: inline surrounds, line-prefix formatting,
   selection preservation, and scroll-preserving focus behavior.
+- Rich paste behavior: HTML-to-Markdown conversion, tab-delimited table
+  extraction, and URL-over-selection link insertion.
 - Cooked-preview conventions such as `div.md-table` table wrapping and `lang-*`
   code classes.
 

@@ -8,7 +8,7 @@ export type FormatAction =
   | "numbered-list"
   | "heading";
 
-type Selection = {
+export type EditorSelection = {
   start: number;
   end: number;
   value: string;
@@ -62,7 +62,7 @@ export class LocalTextManipulation {
     this.textarea.focus({ preventScroll: true });
   }
 
-  getSelected(trimLeading = false): Selection {
+  getSelected(trimLeading = false): EditorSelection {
     const value = this.value;
     let { selectionStart: start, selectionEnd: end } = this.textarea;
 
@@ -96,8 +96,12 @@ export class LocalTextManipulation {
 
   insertText(text: string): void {
     const selected = this.getSelected();
-    this.insertAt(selected.start, selected.end, text);
-    this.selectText(selected.start + text.length, 0);
+    this.replaceSelection(text, selected);
+  }
+
+  replaceSelection(text: string, selection = this.getSelected()): void {
+    this.insertAt(selection.start, selection.end, text);
+    this.selectText(selection.start + text.length, 0);
   }
 
   applySurround(
