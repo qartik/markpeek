@@ -84,6 +84,13 @@ textarea {
   font-size: 0.9rem;
 }
 
+.markdown-previewer__header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
 .markdown-previewer__header-links {
   display: flex;
   flex-wrap: nowrap;
@@ -92,29 +99,58 @@ textarea {
   white-space: nowrap;
 }
 
-.markdown-previewer__header-links a {
+.markdown-previewer__header-links a,
+.markdown-previewer__header-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: 2rem;
+  gap: 0.4rem;
+  min-inline-size: 2rem;
   block-size: 2rem;
   color: var(--tertiary);
   font-size: 0.86rem;
   font-weight: 600;
   border-radius: 0.25rem;
   text-decoration: none;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  padding: 0 0.55rem;
 }
 
 .markdown-previewer__header-links a:hover,
-.markdown-previewer__header-links a:focus-visible {
+.markdown-previewer__header-links a:focus-visible,
+.markdown-previewer__header-action:hover,
+.markdown-previewer__header-action:focus-visible {
   color: var(--tertiary-hover);
   background: light-dark(#e6f5fb, #123041);
   text-decoration: none;
 }
 
-.markdown-previewer__header-links a:focus-visible {
+.markdown-previewer__header-links a:focus-visible,
+.markdown-previewer__header-action:focus-visible {
   outline: 2px solid var(--tertiary);
   outline-offset: 0.2rem;
+}
+
+.markdown-previewer__header-action span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.markdown-previewer__share-status {
+  margin: 0;
+  min-block-size: 1.25rem;
+  color: var(--primary-medium);
+  font-size: 0.78rem;
+}
+
+.markdown-previewer__share-status[data-tone="success"] {
+  color: light-dark(#146c43, #73d8a7);
+}
+
+.markdown-previewer__share-status[data-tone="error"] {
+  color: light-dark(#b42318, #ff8b7a);
 }
 
 .markdown-previewer__workspace {
@@ -218,6 +254,12 @@ textarea {
   padding: 1rem;
 }
 
+.markdown-previewer__clipboard-proxy {
+  position: absolute;
+  inset-inline-start: -9999px;
+  inset-block-start: 0;
+}
+
 .cooked {
   overflow-wrap: anywhere;
 }
@@ -289,15 +331,16 @@ textarea {
 
 @media (max-width: 48rem) {
   .markdown-previewer__header {
+    align-items: stretch;
+  }
+
+  .markdown-previewer__header-actions {
     align-items: flex-start;
-    position: relative;
-    padding-inline-end: 4rem;
   }
 
   .markdown-previewer__header-links {
-    position: absolute;
-    inset-block-start: 0.85rem;
-    inset-inline-end: clamp(1rem, 3vw, 2rem);
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .markdown-previewer__workspace {

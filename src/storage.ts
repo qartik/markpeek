@@ -1,7 +1,11 @@
 const STORAGE_KEY = "markpeek:draft";
 
+export function loadStoredDraft(): string | null {
+  return window.localStorage.getItem(STORAGE_KEY);
+}
+
 export function loadDraft(fallback: string): string {
-  return window.localStorage.getItem(STORAGE_KEY) ?? fallback;
+  return loadStoredDraft() ?? fallback;
 }
 
 export function saveDraft(value: string): void {

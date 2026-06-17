@@ -11,8 +11,10 @@ Open it here: [https://qartik.github.io/markpeek/](https://qartik.github.io/mark
 - See sanitized preview output as you type.
 - Paste rich HTML and spreadsheet data into usable Markdown.
 - Use familiar composer-style formatting buttons and keyboard shortcuts.
-- Keep drafts local in your browser with no backend, accounts, or networked
-  document storage.
+- Keep drafts local in your browser by default, with no backend, accounts, or
+  networked document storage.
+- Generate explicit shareable URLs when you want to send a draft and preview to
+  someone else.
 
 ## Smart Paste
 
@@ -24,6 +26,17 @@ markpeek handles common paste workflows directly in the browser:
 
 It intentionally does not implement uploads, oneboxes, mentions, auth, drafts
 sync, forum APIs, or any Discourse server behavior.
+
+## Share By URL
+
+markpeek can generate a shareable URL that embeds the current Markdown into the
+URL fragment. Opening that link restores both the editor contents and rendered
+preview entirely in the browser.
+
+- Sharing is explicit. Local drafts remain the default behavior.
+- Shared links do not require a backend or external storage service.
+- Very large drafts may exceed practical browser URL length limits; in those
+  cases markpeek will refuse to generate a share link.
 
 ## Composer-Style Editing
 
