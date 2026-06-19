@@ -211,6 +211,39 @@ describe("mountApp", () => {
     expect(app.dataset.viewMode).toBe("split");
   });
 
+  it("shows only mode-changing controls for the current view", async () => {
+    await mountApp(document, window);
+
+    const editorZenButton = document.querySelector<HTMLButtonElement>(
+      "[data-view-toggle='editor-zen']",
+    )!;
+    const previewZenButton = document.querySelector<HTMLButtonElement>(
+      "[data-view-toggle='preview-zen']",
+    )!;
+    const splitFromEditor = document.querySelector<HTMLButtonElement>(
+      "[data-view-toggle='split'][data-visible-in='editor-zen']",
+    )!;
+    const splitFromPreview = document.querySelector<HTMLButtonElement>(
+      "[data-view-toggle='split'][data-visible-in='preview-zen']",
+    )!;
+
+    expect(editorZenButton.hidden).toBe(false);
+    expect(previewZenButton.hidden).toBe(false);
+    expect(splitFromEditor.hidden).toBe(true);
+    expect(splitFromPreview.hidden).toBe(true);
+
+    editorZenButton.click();
+
+    expect(editorZenButton.hidden).toBe(true);
+    expect(splitFromEditor.hidden).toBe(false);
+
+    splitFromEditor.click();
+    previewZenButton.click();
+
+    expect(previewZenButton.hidden).toBe(true);
+    expect(splitFromPreview.hidden).toBe(false);
+  });
+
   it("keeps highlighted code blocks available in preview zen mode", async () => {
     await mountApp(document, window);
 

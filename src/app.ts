@@ -325,13 +325,18 @@ function renderViewMode(app: HTMLElement, viewMode: ViewMode): void {
   app.dataset.viewMode = viewMode;
   app.dataset.chromeHidden = viewMode === "split" ? "false" : "true";
 
-  app.querySelectorAll<HTMLElement>("[data-visible-in]").forEach((element) => {
-    element.hidden = element.dataset.visibleIn !== viewMode;
-  });
-
   app.querySelectorAll<HTMLButtonElement>("[data-view-toggle]").forEach((button) => {
     const nextMode = button.dataset.viewToggle as ViewMode | undefined;
+    const visibleIn = button.dataset.visibleIn as ViewMode | undefined;
+    const shouldShow =
+      visibleIn !== undefined ? visibleIn === viewMode : nextMode !== viewMode;
+
+    button.hidden = !shouldShow;
     button.setAttribute("aria-pressed", String(nextMode === viewMode));
+  });
+
+  app.querySelectorAll<HTMLElement>("[data-visible-in]").forEach((element) => {
+    element.hidden = element.dataset.visibleIn !== viewMode;
   });
 }
 
