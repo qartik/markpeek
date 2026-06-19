@@ -1,6 +1,7 @@
 import {
   Bold,
   Code,
+  Expand,
   Github,
   Heading,
   Image as ImageIcon,
@@ -10,6 +11,7 @@ import {
   ListOrdered,
   Quote,
   Share2,
+  Shrink,
   createElement,
   type IconNode,
 } from "lucide";
@@ -69,12 +71,14 @@ const toolbarItems: Array<{
   },
 ];
 
+type ViewMode = "split" | "editor-zen" | "preview-zen";
+
 export async function mountApp(
   doc: Document = document,
   win: Window = window,
 ): Promise<void> {
   doc.querySelector<HTMLDivElement>("#app")!.innerHTML = `
-    <main class="markdown-previewer">
+    <main class="markdown-previewer" data-view-mode="split" data-chrome-hidden="false">
       <header class="markdown-previewer__header">
         <div class="markdown-previewer__header-copy">
           <h1 class="markdown-previewer__title">
@@ -97,11 +101,35 @@ export async function mountApp(
         </div>
       </header>
       <section class="markdown-previewer__workspace">
-        <section class="markdown-previewer__pane" aria-labelledby="editor-heading">
+        <section class="markdown-previewer__pane" data-pane="editor" aria-labelledby="editor-heading">
           <div class="markdown-previewer__pane-header">
             <h2 id="editor-heading" class="markdown-previewer__pane-title">Editor</h2>
             <div class="markdown-previewer__toolbar" role="toolbar" aria-label="Formatting tools">
               <div class="markdown-previewer__toolbar-group" data-toolbar-group="formatting"></div>
+              <div class="markdown-previewer__toolbar-group markdown-previewer__toolbar-group--view">
+                <button
+                  type="button"
+                  class="markdown-previewer__toolbar-button markdown-previewer__toolbar-button--text"
+                  data-view-toggle="editor-zen"
+                  aria-label="Toggle editor zen mode"
+                  title="Editor zen mode"
+                >
+                  <span data-pane-icon="editor-zen-enter"></span>
+                  <span>Zen</span>
+                </button>
+                <button
+                  type="button"
+                  class="markdown-previewer__toolbar-button markdown-previewer__toolbar-button--text"
+                  data-view-toggle="split"
+                  data-visible-in="editor-zen"
+                  aria-label="Exit editor zen mode"
+                  title="Back to split view"
+                  hidden
+                >
+                  <span data-pane-icon="split-exit-editor"></span>
+                  <span>Split view</span>
+                </button>
+              </div>
             </div>
           </div>
           <textarea
@@ -110,9 +138,35 @@ export async function mountApp(
             spellcheck="true"
           ></textarea>
         </section>
-        <section class="markdown-previewer__pane" aria-labelledby="preview-heading">
+        <section class="markdown-previewer__pane" data-pane="preview" aria-labelledby="preview-heading">
           <div class="markdown-previewer__pane-header">
             <h2 id="preview-heading" class="markdown-previewer__pane-title">Preview</h2>
+            <div class="markdown-previewer__toolbar markdown-previewer__toolbar--pane" role="toolbar" aria-label="Preview display options">
+              <div class="markdown-previewer__toolbar-group markdown-previewer__toolbar-group--view">
+                <button
+                  type="button"
+                  class="markdown-previewer__toolbar-button markdown-previewer__toolbar-button--text"
+                  data-view-toggle="preview-zen"
+                  aria-label="Show preview only"
+                  title="Preview only"
+                >
+                  <span data-pane-icon="preview-zen-enter"></span>
+                  <span>Preview only</span>
+                </button>
+                <button
+                  type="button"
+                  class="markdown-previewer__toolbar-button markdown-previewer__toolbar-button--text"
+                  data-view-toggle="split"
+                  data-visible-in="preview-zen"
+                  aria-label="Exit preview only mode"
+                  title="Back to split view"
+                  hidden
+                >
+                  <span data-pane-icon="split-exit-preview"></span>
+                  <span>Split view</span>
+                </button>
+              </div>
+            </div>
           </div>
           <article class="markdown-previewer__preview cooked" aria-live="polite"></article>
         </section>
@@ -121,6 +175,7 @@ export async function mountApp(
   `;
 
   const toolbar = doc.querySelector<HTMLDivElement>(".markdown-previewer__toolbar")!;
+  const app = doc.querySelector<HTMLElement>(".markdown-previewer")!;
   const formattingToolbar = doc.querySelector<HTMLDivElement>(
     '[data-toolbar-group="formatting"]',
   )!;
@@ -130,15 +185,17 @@ export async function mountApp(
   const shareStatus = doc.querySelector<HTMLElement>("[data-share-status]")!;
   const textManipulation = new LocalTextManipulation(editor);
   const history = new EditorHistory(editor);
+  let viewMode: ViewMode = "split";
   let hasUserEdited = false;
 
   renderToolbar(formattingToolbar);
   renderHeaderLinks(doc);
+  renderViewMode(app, viewMode);
 
   const initialDraft = await loadInitialDraft(DEFAULT_DRAFT, win.location);
   editor.value = initialDraft.value;
   renderPreview(editor, preview);
-  syncScrolling(editor, preview);
+  syncScrolling(editor, preview, () => viewMode === "split");
   attachPasteHandler(editor, textManipulation);
 
   editor.addEventListener("input", () => {
@@ -176,9 +233,36 @@ export async function mountApp(
     performAction(button.dataset.action, history, textManipulation);
   });
 
+  doc.addEventListener("click", (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      "[data-view-toggle]",
+    );
+
+    const nextMode = button?.dataset.viewToggle as ViewMode | undefined;
+    if (!nextMode) {
+      return;
+    }
+
+    setViewMode(nextMode);
+  });
+
+  doc.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || viewMode === "split") {
+      return;
+    }
+
+    event.preventDefault();
+    setViewMode("split");
+  });
+
   shareButton.addEventListener("click", async () => {
     await shareDraft(editor.value, shareStatus, doc, win);
   });
+
+  function setViewMode(nextMode: ViewMode): void {
+    viewMode = nextMode;
+    renderViewMode(app, viewMode);
+  }
 }
 
 function renderToolbar(formattingToolbar: HTMLDivElement): void {
@@ -223,6 +307,32 @@ function renderHeaderLinks(doc: Document): void {
   doc.querySelector('[data-header-icon="github"]')?.append(
     createElement(Github, { width: 18, height: 18, "aria-hidden": "true" }),
   );
+  doc.querySelector('[data-pane-icon="editor-zen-enter"]')?.append(
+    createElement(Expand, { width: 16, height: 16, "aria-hidden": "true" }),
+  );
+  doc.querySelector('[data-pane-icon="preview-zen-enter"]')?.append(
+    createElement(Expand, { width: 16, height: 16, "aria-hidden": "true" }),
+  );
+  doc.querySelector('[data-pane-icon="split-exit-editor"]')?.append(
+    createElement(Shrink, { width: 16, height: 16, "aria-hidden": "true" }),
+  );
+  doc.querySelector('[data-pane-icon="split-exit-preview"]')?.append(
+    createElement(Shrink, { width: 16, height: 16, "aria-hidden": "true" }),
+  );
+}
+
+function renderViewMode(app: HTMLElement, viewMode: ViewMode): void {
+  app.dataset.viewMode = viewMode;
+  app.dataset.chromeHidden = viewMode === "split" ? "false" : "true";
+
+  app.querySelectorAll<HTMLElement>("[data-visible-in]").forEach((element) => {
+    element.hidden = element.dataset.visibleIn !== viewMode;
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("[data-view-toggle]").forEach((button) => {
+    const nextMode = button.dataset.viewToggle as ViewMode | undefined;
+    button.setAttribute("aria-pressed", String(nextMode === viewMode));
+  });
 }
 
 function markdownLogoElement(): SVGSVGElement {

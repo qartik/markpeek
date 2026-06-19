@@ -11,11 +11,12 @@ function applyScrollRatio(element: HTMLElement, ratio: number): void {
 export function syncScrolling(
   editor: HTMLTextAreaElement,
   preview: HTMLElement,
+  shouldSync: () => boolean = () => true,
 ): void {
   let syncing = false;
 
   function sync(source: HTMLElement, target: HTMLElement): void {
-    if (syncing) {
+    if (syncing || !shouldSync()) {
       return;
     }
 

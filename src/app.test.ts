@@ -141,4 +141,114 @@ describe("mountApp", () => {
 
     expect(editor?.value).toBe("Stored draft");
   });
+
+  it("starts in split view mode", async () => {
+    await mountApp(document, window);
+
+    const app = document.querySelector<HTMLElement>("[data-view-mode]");
+
+    expect(app?.dataset.viewMode).toBe("split");
+  });
+
+  it("toggles editor zen mode without clearing the draft", async () => {
+    await mountApp(document, window);
+
+    const app = document.querySelector<HTMLElement>("[data-view-mode]")!;
+    const root = document.querySelector<HTMLElement>(".markdown-previewer")!;
+    const editor = document.querySelector<HTMLTextAreaElement>(
+      ".markdown-previewer__editor",
+    )!;
+    const button = document.querySelector<HTMLButtonElement>(
+      "[data-view-toggle='editor-zen']",
+    )!;
+
+    editor.value = "Focused draft";
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    button.click();
+
+    expect(app.dataset.viewMode).toBe("editor-zen");
+    expect(root.dataset.chromeHidden).toBe("true");
+    expect(editor.value).toBe("Focused draft");
+  });
+
+  it("toggles preview zen mode without clearing the preview output", async () => {
+    await mountApp(document, window);
+
+    const app = document.querySelector<HTMLElement>("[data-view-mode]")!;
+    const root = document.querySelector<HTMLElement>(".markdown-previewer")!;
+    const editor = document.querySelector<HTMLTextAreaElement>(
+      ".markdown-previewer__editor",
+    )!;
+    const preview = document.querySelector<HTMLElement>(
+      ".markdown-previewer__preview",
+    )!;
+    const button = document.querySelector<HTMLButtonElement>(
+      "[data-view-toggle='preview-zen']",
+    )!;
+
+    editor.value = "# Preview only";
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    button.click();
+
+    expect(app.dataset.viewMode).toBe("preview-zen");
+    expect(root.dataset.chromeHidden).toBe("true");
+    expect(preview.textContent).toContain("Preview only");
+  });
+
+  it("returns to split mode when escape is pressed in zen mode", async () => {
+    await mountApp(document, window);
+
+    const app = document.querySelector<HTMLElement>("[data-view-mode]")!;
+    const button = document.querySelector<HTMLButtonElement>(
+      "[data-view-toggle='preview-zen']",
+    )!;
+
+    button.click();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+
+    expect(app.dataset.viewMode).toBe("split");
+  });
+
+  it("keeps highlighted code blocks available in preview zen mode", async () => {
+    await mountApp(document, window);
+
+    const editor = document.querySelector<HTMLTextAreaElement>(
+      ".markdown-previewer__editor",
+    )!;
+    const preview = document.querySelector<HTMLElement>(
+      ".markdown-previewer__preview",
+    )!;
+    const button = document.querySelector<HTMLButtonElement>(
+      "[data-view-toggle='preview-zen']",
+    )!;
+
+    editor.value = '```js\nconsole.log("zen");\n```';
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    button.click();
+
+    expect(preview.querySelector("pre code.hljs")).not.toBeNull();
+  });
+
+  it("does not throw when scrolling while a pane is hidden in zen mode", async () => {
+    await mountApp(document, window);
+
+    const button = document.querySelector<HTMLButtonElement>(
+      "[data-view-toggle='editor-zen']",
+    )!;
+    const editor = document.querySelector<HTMLTextAreaElement>(
+      ".markdown-previewer__editor",
+    )!;
+    const preview = document.querySelector<HTMLElement>(
+      ".markdown-previewer__preview",
+    )!;
+
+    button.click();
+
+    expect(() => {
+      editor.dispatchEvent(new Event("scroll"));
+      preview.dispatchEvent(new Event("scroll"));
+    }).not.toThrow();
+  });
 });
