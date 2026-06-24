@@ -269,6 +269,7 @@ textarea {
   padding: 1rem;
   color: var(--primary);
   background: var(--secondary);
+  font-size: 0.9375rem;
   font-family:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     monospace;
@@ -373,6 +374,10 @@ textarea {
 }
 
 @media (max-width: 48rem) {
+  .markdown-previewer__editor {
+    font-size: 1rem;
+  }
+
   .markdown-previewer__header {
     align-items: stretch;
   }
