@@ -23,7 +23,7 @@ function languageClass(language: string): string {
 const md: MarkdownIt = new MarkdownIt({
   html: false,
   linkify: true,
-  typographer: true,
+  typographer: false,
   breaks: true,
   highlight(code: string, language: string): string {
     const cleanLanguage = language.trim().replace(/[^\w+-]/g, "");
