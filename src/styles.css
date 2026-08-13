@@ -373,6 +373,61 @@ textarea {
   background: light-dark(#ecfdf5, #17312d);
 }
 
+@media print {
+  :root {
+    color-scheme: light;
+    color: #1f2933;
+    background: #fff;
+  }
+
+  body {
+    min-width: 0;
+    background: #fff;
+  }
+
+  .markdown-previewer {
+    block-size: auto;
+    display: block;
+  }
+
+  .markdown-previewer__header,
+  .markdown-previewer__pane[data-pane="editor"],
+  .markdown-previewer__pane-header {
+    display: none !important;
+  }
+
+  .markdown-previewer__workspace,
+  .markdown-previewer__pane[data-pane="preview"],
+  .markdown-previewer__preview {
+    display: block;
+    min-block-size: 0;
+    overflow: visible;
+  }
+
+  .markdown-previewer__pane[data-pane="preview"] {
+    background: #fff;
+    border: 0;
+  }
+
+  .markdown-previewer__preview {
+    padding: 0;
+  }
+
+  .cooked a {
+    color: #005a8d;
+  }
+
+  .cooked pre,
+  .md-table {
+    overflow: visible;
+  }
+
+  .cooked pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
 @media (max-width: 48rem) {
   .markdown-previewer__editor {
     font-size: 1rem;
