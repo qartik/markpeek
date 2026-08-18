@@ -10,8 +10,10 @@ import {
   List,
   ListOrdered,
   Quote,
+  Search,
   Share2,
   Shrink,
+  WandSparkles,
   createElement,
   type IconNode,
 } from "lucide";
@@ -25,6 +27,13 @@ import {
   loadInitialDraft,
 } from "./share";
 import { saveDraft } from "./storage";
+import {
+  cleanWhitespace,
+  findNext,
+  replaceAll,
+  replaceMatch,
+  type FindMatch,
+} from "./find-replace";
 import { LocalTextManipulation, type FormatAction } from "./text-manipulation";
 import "./styles.css";
 import "highlight.js/styles/github.css";
@@ -106,6 +115,14 @@ export async function mountApp(
             <h2 id="editor-heading" class="markdown-previewer__pane-title">Editor</h2>
             <div class="markdown-previewer__toolbar" role="toolbar" aria-label="Formatting tools">
               <div class="markdown-previewer__toolbar-group" data-toolbar-group="formatting"></div>
+              <div class="markdown-previewer__toolbar-group" aria-label="Text cleanup tools">
+                <button type="button" class="markdown-previewer__toolbar-button" data-find-replace-open aria-label="Find and replace" title="Find and replace (Mod+Option+F)">
+                  <span data-pane-icon="find-replace"></span>
+                </button>
+                <button type="button" class="markdown-previewer__toolbar-button" data-cleanup-whitespace aria-label="Clean whitespace" title="Clean whitespace (Mod+Option+W)">
+                  <span data-pane-icon="cleanup-whitespace"></span>
+                </button>
+              </div>
               <div class="markdown-previewer__toolbar-group markdown-previewer__toolbar-group--view">
                 <button
                   type="button"
@@ -132,6 +149,29 @@ export async function mountApp(
               </div>
             </div>
           </div>
+          <section class="markdown-previewer__find-replace" data-find-replace hidden aria-label="Find and replace">
+            <div class="markdown-previewer__find-replace-fields">
+              <label>
+                <span>Find</span>
+                <input type="text" data-find-input aria-label="Find text" autocomplete="off" />
+              </label>
+              <label data-replace-controls>
+                <span>Replace</span>
+                <input type="text" data-replace-input aria-label="Replace with" autocomplete="off" />
+              </label>
+            </div>
+            <div class="markdown-previewer__find-replace-actions">
+              <label class="markdown-previewer__find-replace-toggle">
+                <input type="checkbox" data-regex-toggle />
+                <span>Use regular expression</span>
+              </label>
+              <p data-find-status class="markdown-previewer__find-status" aria-live="polite"></p>
+              <button type="button" class="markdown-previewer__toolbar-button markdown-previewer__toolbar-button--text" data-find-next>Find next</button>
+              <button type="button" class="markdown-previewer__toolbar-button markdown-previewer__toolbar-button--text" data-replace-next data-replace-controls>Replace next</button>
+              <button type="button" class="markdown-previewer__toolbar-button markdown-previewer__toolbar-button--text" data-replace-all data-replace-controls>Replace all</button>
+              <button type="button" class="markdown-previewer__toolbar-button markdown-previewer__toolbar-button--text" data-find-close>Close</button>
+            </div>
+          </section>
           <textarea
             class="markdown-previewer__editor"
             aria-label="Markdown editor"
@@ -181,12 +221,18 @@ export async function mountApp(
   )!;
   const editor = doc.querySelector<HTMLTextAreaElement>(".markdown-previewer__editor")!;
   const preview = doc.querySelector<HTMLElement>(".markdown-previewer__preview")!;
+  const findReplacePanel = doc.querySelector<HTMLElement>("[data-find-replace]")!;
+  const findInput = doc.querySelector<HTMLInputElement>("[data-find-input]")!;
+  const replaceInput = doc.querySelector<HTMLInputElement>("[data-replace-input]")!;
+  const regexToggle = doc.querySelector<HTMLInputElement>("[data-regex-toggle]")!;
+  const findStatus = doc.querySelector<HTMLElement>("[data-find-status]")!;
   const shareButton = doc.querySelector<HTMLButtonElement>("[data-share-button]")!;
   const shareStatus = doc.querySelector<HTMLElement>("[data-share-status]")!;
   const textManipulation = new LocalTextManipulation(editor);
   const history = new EditorHistory(editor);
   let viewMode: ViewMode = "split";
   let hasUserEdited = false;
+  let currentMatch: FindMatch | null = null;
 
   renderToolbar(formattingToolbar);
   renderHeaderLinks(doc);
@@ -195,10 +241,12 @@ export async function mountApp(
   const initialDraft = await loadInitialDraft(DEFAULT_DRAFT, win.location);
   editor.value = initialDraft.value;
   renderPreview(editor, preview);
+  history.record();
   syncScrolling(editor, preview, () => viewMode === "split");
   attachPasteHandler(editor, textManipulation);
 
   editor.addEventListener("input", () => {
+    currentMatch = null;
     if (!hasUserEdited) {
       hasUserEdited = true;
     }
@@ -211,6 +259,16 @@ export async function mountApp(
   });
 
   editor.addEventListener("keydown", (event) => {
+    if (findReplaceKeyboardAction(event)) {
+      event.preventDefault();
+      if (event.code === "KeyW") {
+        applyWhitespaceCleanup();
+      } else {
+        openFindReplace(event.altKey);
+      }
+      return;
+    }
+
     const action = keyboardAction(event);
 
     if (!action) {
@@ -247,10 +305,19 @@ export async function mountApp(
   });
 
   doc.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape" || viewMode === "split") {
+    if (event.key !== "Escape") {
       return;
     }
 
+    if (!findReplacePanel.hidden) {
+      event.preventDefault();
+      closeFindReplace();
+      return;
+    }
+
+    if (viewMode === "split") {
+      return;
+    }
     event.preventDefault();
     setViewMode("split");
   });
@@ -258,6 +325,138 @@ export async function mountApp(
   shareButton.addEventListener("click", async () => {
     await shareDraft(editor.value, shareStatus, doc, win);
   });
+
+  doc.querySelector<HTMLButtonElement>("[data-find-replace-open]")!.addEventListener("click", () => {
+    openFindReplace(true);
+  });
+  doc.querySelector<HTMLButtonElement>("[data-cleanup-whitespace]")!.addEventListener("click", () => {
+    applyWhitespaceCleanup();
+  });
+  doc.querySelector<HTMLButtonElement>("[data-find-next]")!.addEventListener("click", () => {
+    findAndSelect();
+  });
+  doc.querySelector<HTMLButtonElement>("[data-replace-next]")!.addEventListener("click", () => {
+    replaceNextMatch();
+  });
+  doc.querySelector<HTMLButtonElement>("[data-replace-all]")!.addEventListener("click", () => {
+    replaceEveryMatch();
+  });
+  doc.querySelector<HTMLButtonElement>("[data-find-close]")!.addEventListener("click", closeFindReplace);
+  findInput.addEventListener("input", () => {
+    currentMatch = null;
+    clearFindStatus();
+  });
+  regexToggle.addEventListener("change", () => {
+    currentMatch = null;
+    clearFindStatus();
+  });
+
+  function openFindReplace(showReplacement: boolean): void {
+    const selected = editor.value.slice(editor.selectionStart, editor.selectionEnd);
+    if (selected) {
+      findInput.value = selected;
+    }
+    findReplacePanel.hidden = false;
+    findReplacePanel.querySelectorAll<HTMLElement>("[data-replace-controls]").forEach((element) => {
+      element.hidden = !showReplacement;
+    });
+    currentMatch = null;
+    clearFindStatus();
+    findInput.focus();
+    findInput.select();
+  }
+
+  function closeFindReplace(): void {
+    findReplacePanel.hidden = true;
+    currentMatch = null;
+    editor.focus({ preventScroll: true });
+  }
+
+  function findAndSelect(): FindMatch | null {
+    const from = currentMatch
+      ? currentMatch.end + Number(currentMatch.start === currentMatch.end)
+      : editor.selectionEnd;
+    const result = findNext(editor.value, findInput.value, regexToggle.checked, from);
+    if (!result.ok) {
+      setFindStatus(result.error);
+      return null;
+    }
+    if (!result.match) {
+      setFindStatus(findInput.value ? "No matches found." : "Enter text to find.");
+      currentMatch = null;
+      return null;
+    }
+
+    currentMatch = result.match;
+    editor.setSelectionRange(result.match.start, result.match.end);
+    editor.focus({ preventScroll: true });
+    setFindStatus(result.match.wrapped ? "Wrapped to the first match." : "Match found.");
+    return result.match;
+  }
+
+  function replaceNextMatch(): void {
+    const match = currentMatch ?? findAndSelect();
+    if (!match) return;
+
+    const replacement = replaceMatch(
+      editor.value,
+      findInput.value,
+      replaceInput.value,
+      regexToggle.checked,
+      match,
+    );
+    const replacementLength = replacement.length - editor.value.length + match.end - match.start;
+    applyEditorValue(replacement, match.start, match.start + replacementLength);
+    currentMatch = null;
+    setFindStatus("Replaced one match.");
+  }
+
+  function replaceEveryMatch(): void {
+    const result = replaceAll(
+      editor.value,
+      findInput.value,
+      replaceInput.value,
+      regexToggle.checked,
+    );
+    if (!result.ok) {
+      setFindStatus(result.error);
+      return;
+    }
+    if (result.count === 0) {
+      setFindStatus(findInput.value ? "No matches found." : "Enter text to find.");
+      return;
+    }
+
+    applyEditorValue(result.value, editor.selectionStart, editor.selectionEnd);
+    currentMatch = null;
+    setFindStatus(`Replaced ${result.count} match${result.count === 1 ? "" : "es"}.`);
+  }
+
+  function applyWhitespaceCleanup(): void {
+    const cleaned = cleanWhitespace(editor.value);
+    if (cleaned === editor.value) {
+      return;
+    }
+    applyEditorValue(
+      cleaned,
+      Math.min(editor.selectionStart, cleaned.length),
+      Math.min(editor.selectionEnd, cleaned.length),
+    );
+  }
+
+  function applyEditorValue(value: string, selectionStart: number, selectionEnd: number): void {
+    editor.value = value;
+    editor.setSelectionRange(selectionStart, selectionEnd);
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function setFindStatus(message: string): void {
+    findStatus.textContent = message;
+  }
+
+  function clearFindStatus(): void {
+    findStatus.textContent = "";
+  }
 
   function setViewMode(nextMode: ViewMode): void {
     viewMode = nextMode;
@@ -318,6 +517,12 @@ function renderHeaderLinks(doc: Document): void {
   );
   doc.querySelector('[data-pane-icon="split-exit-preview"]')?.append(
     createElement(Shrink, { width: 16, height: 16, "aria-hidden": "true" }),
+  );
+  doc.querySelector('[data-pane-icon="find-replace"]')?.append(
+    createElement(Search, { width: 18, height: 18, "aria-hidden": "true" }),
+  );
+  doc.querySelector('[data-pane-icon="cleanup-whitespace"]')?.append(
+    createElement(WandSparkles, { width: 18, height: 18, "aria-hidden": "true" }),
   );
 }
 
@@ -416,6 +621,14 @@ function keyboardAction(event: KeyboardEvent): string | null {
     default:
       return null;
   }
+}
+
+function findReplaceKeyboardAction(event: KeyboardEvent): boolean {
+  if ((!event.metaKey && !event.ctrlKey) || event.shiftKey) {
+    return false;
+  }
+
+  return event.code === "KeyF" || (event.altKey && event.code === "KeyW");
 }
 
 async function copyText(

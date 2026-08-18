@@ -284,4 +284,108 @@ describe("mountApp", () => {
       preview.dispatchEvent(new Event("scroll"));
     }).not.toThrow();
   });
+
+  it("opens find and replace from the toolbar and seeds find with the selection", async () => {
+    await mountApp(document, window);
+
+    const editor = document.querySelector<HTMLTextAreaElement>(
+      ".markdown-previewer__editor",
+    )!;
+    const panel = document.querySelector<HTMLElement>("[data-find-replace]")!;
+    const find = document.querySelector<HTMLInputElement>("[data-find-input]")!;
+
+    editor.value = "Selected text";
+    editor.setSelectionRange(0, 8);
+    document.querySelector<HTMLButtonElement>("[data-find-replace-open]")!.click();
+
+    expect(panel.hidden).toBe(false);
+    expect(find.value).toBe("Selected");
+  });
+
+  it("finds, replaces, and closes the panel with keyboard controls", async () => {
+    await mountApp(document, window);
+
+    const editor = document.querySelector<HTMLTextAreaElement>(
+      ".markdown-previewer__editor",
+    )!;
+    editor.value = "one two one";
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    editor.dispatchEvent(
+      new KeyboardEvent("keydown", { code: "KeyF", metaKey: true, bubbles: true }),
+    );
+
+    const find = document.querySelector<HTMLInputElement>("[data-find-input]")!;
+    const replacement = document.querySelector<HTMLInputElement>("[data-replace-input]")!;
+    find.value = "one";
+    find.dispatchEvent(new Event("input", { bubbles: true }));
+    replacement.value = "1";
+    document.querySelector<HTMLButtonElement>("[data-find-next]")!.click();
+
+    expect(editor.value.slice(editor.selectionStart, editor.selectionEnd)).toBe("one");
+
+    editor.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        code: "KeyF",
+        metaKey: true,
+        altKey: true,
+        bubbles: true,
+      }),
+    );
+    document.querySelector<HTMLButtonElement>("[data-replace-all]")!.click();
+    expect(editor.value).toBe("1 two 1");
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(document.querySelector<HTMLElement>("[data-find-replace]")!.hidden).toBe(true);
+  });
+
+  it("searches again after the draft changes before replacing", async () => {
+    await mountApp(document, window);
+
+    const editor = document.querySelector<HTMLTextAreaElement>(
+      ".markdown-previewer__editor",
+    )!;
+    document.querySelector<HTMLButtonElement>("[data-find-replace-open]")!.click();
+    const find = document.querySelector<HTMLInputElement>("[data-find-input]")!;
+    const replacement = document.querySelector<HTMLInputElement>("[data-replace-input]")!;
+    find.value = "one";
+    find.dispatchEvent(new Event("input", { bubbles: true }));
+    replacement.value = "x";
+    editor.value = "one";
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector<HTMLButtonElement>("[data-find-next]")!.click();
+
+    editor.value = "prefix one";
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector<HTMLButtonElement>("[data-replace-next]")!.click();
+
+    expect(editor.value).toBe("prefix x");
+  });
+
+  it("cleans whitespace through its shortcut and keeps the edit undoable", async () => {
+    await mountApp(document, window);
+
+    const editor = document.querySelector<HTMLTextAreaElement>(
+      ".markdown-previewer__editor",
+    )!;
+    editor.value = "\n\nfirst  \n\n\nsecond\t\n";
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    editor.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        code: "KeyW",
+        metaKey: true,
+        altKey: true,
+        bubbles: true,
+      }),
+    );
+
+    expect(editor.value).toBe("first\n\nsecond");
+    expect(document.querySelector(".markdown-previewer__preview")?.textContent).toContain(
+      "second",
+    );
+
+    editor.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "z", metaKey: true, bubbles: true }),
+    );
+    expect(editor.value).toBe("\n\nfirst  \n\n\nsecond\t\n");
+  });
 });

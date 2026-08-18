@@ -45,6 +45,8 @@ The toolbar covers the Markdown actions used most while drafting:
 - Bold, italic, link, image by URL, quote, inline/code block, bullet list,
   numbered list, and heading cycling.
 - Undo and redo for both typing and toolbar actions.
+- Find and replace across the draft, with optional regular-expression matching.
+- Clean trailing whitespace and repeated blank lines in one action.
 - Scroll sync between the editor and preview for longer drafts.
 
 Keyboard shortcuts include:
@@ -57,6 +59,9 @@ Keyboard shortcuts include:
 | Code | `Mod+E` |
 | Quote | `Mod+Shift+9` |
 | Heading cycle | `Shift+Mod+H` |
+| Find | `Mod+F` |
+| Find and replace | `Mod+Option+F` |
+| Clean whitespace | `Mod+Option+W` |
 | Undo | `Mod+Z` |
 | Redo | `Shift+Mod+Z` or `Mod+Y` |
 
