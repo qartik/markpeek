@@ -246,6 +246,7 @@ export async function mountApp(
   attachPasteHandler(editor, textManipulation);
 
   editor.addEventListener("input", () => {
+    currentMatch = null;
     if (!hasUserEdited) {
       hasUserEdited = true;
     }

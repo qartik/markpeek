@@ -338,6 +338,29 @@ describe("mountApp", () => {
     expect(document.querySelector<HTMLElement>("[data-find-replace]")!.hidden).toBe(true);
   });
 
+  it("searches again after the draft changes before replacing", async () => {
+    await mountApp(document, window);
+
+    const editor = document.querySelector<HTMLTextAreaElement>(
+      ".markdown-previewer__editor",
+    )!;
+    document.querySelector<HTMLButtonElement>("[data-find-replace-open]")!.click();
+    const find = document.querySelector<HTMLInputElement>("[data-find-input]")!;
+    const replacement = document.querySelector<HTMLInputElement>("[data-replace-input]")!;
+    find.value = "one";
+    find.dispatchEvent(new Event("input", { bubbles: true }));
+    replacement.value = "x";
+    editor.value = "one";
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector<HTMLButtonElement>("[data-find-next]")!.click();
+
+    editor.value = "prefix one";
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector<HTMLButtonElement>("[data-replace-next]")!.click();
+
+    expect(editor.value).toBe("prefix x");
+  });
+
   it("cleans whitespace through its shortcut and keeps the edit undoable", async () => {
     await mountApp(document, window);
 

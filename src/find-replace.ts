@@ -22,7 +22,7 @@ export function findNext(
     return { ok: true, match: null };
   }
 
-  const startAt = Math.min(Math.max(from, 0), value.length);
+  const startAt = Math.max(from, 0);
 
   if (!regex) {
     const start = value.indexOf(query, startAt);
@@ -79,7 +79,11 @@ export function replaceAll(
 
   if (!regex) {
     const count = value.split(query).length - 1;
-    return { ok: true, value: value.replaceAll(query, replacement), count };
+    return {
+      ok: true,
+      value: value.replaceAll(query, () => replacement),
+      count,
+    };
   }
 
   let matcher: RegExp;

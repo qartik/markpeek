@@ -7,6 +7,10 @@ describe("find and replace", () => {
       ok: true,
       match: { start: 8, end: 11, wrapped: false },
     });
+    expect(findNext("end", "$", true, 4)).toEqual({
+      ok: true,
+      match: { start: 3, end: 3, wrapped: true },
+    });
     expect(findNext("one two one", "one", false, 11)).toEqual({
       ok: true,
       match: { start: 0, end: 3, wrapped: true },
@@ -34,6 +38,14 @@ describe("find and replace", () => {
     expect(replaceAll("a1 b2", "([a-z])(\\d)", "$2$1", true)).toEqual({
       ok: true,
       value: "1a 2b",
+      count: 2,
+    });
+  });
+
+  it("keeps replacement text literal outside regex mode", () => {
+    expect(replaceAll("a a", "a", "$&$$", false)).toEqual({
+      ok: true,
+      value: "$&$$ $&$$",
       count: 2,
     });
   });
