@@ -276,6 +276,61 @@ textarea {
   line-height: 1.55;
 }
 
+.markdown-previewer__find-replace {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-block-end: 1px solid var(--primary-low);
+  background: light-dark(#fbfcfd, #151a20);
+}
+
+.markdown-previewer__find-replace-fields,
+.markdown-previewer__find-replace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.markdown-previewer__find-replace-fields label {
+  display: grid;
+  flex: 1 1 12rem;
+  gap: 0.2rem;
+  color: var(--primary-medium);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.markdown-previewer__find-replace input[type="text"] {
+  min-inline-size: 0;
+  border: 1px solid var(--primary-low);
+  border-radius: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  color: var(--primary);
+  background: var(--secondary);
+}
+
+.markdown-previewer__find-replace input[type="text"]:focus-visible,
+.markdown-previewer__find-replace-toggle:focus-within {
+  outline: 2px solid var(--tertiary);
+  outline-offset: 2px;
+}
+
+.markdown-previewer__find-replace-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--primary-medium);
+  font-size: 0.78rem;
+}
+
+.markdown-previewer__find-status {
+  flex: 1 1 8rem;
+  margin: 0;
+  color: var(--primary-medium);
+  font-size: 0.78rem;
+}
+
 .markdown-previewer__preview {
   flex: 1;
   min-block-size: 0;
@@ -472,5 +527,9 @@ textarea {
 
   .markdown-previewer__toolbar-group--view {
     justify-content: flex-start;
+  }
+
+  .markdown-previewer__find-replace-fields label {
+    flex-basis: 100%;
   }
 }
