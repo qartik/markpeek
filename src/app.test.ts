@@ -361,6 +361,95 @@ describe("mountApp", () => {
     expect(editor.value).toBe("prefix x");
   });
 
+  async function setupReplace(value: string, query: string, replacement: string, regex = false) {
+    await mountApp(document, window);
+    const editor = document.querySelector<HTMLTextAreaElement>(".markdown-previewer__editor")!;
+    editor.value = value;
+    editor.setSelectionRange(0, 0);
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector<HTMLButtonElement>("[data-find-replace-open]")!.click();
+    const find = document.querySelector<HTMLInputElement>("[data-find-input]")!;
+    find.value = query;
+    find.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector<HTMLInputElement>("[data-replace-input]")!.value = replacement;
+    const toggle = document.querySelector<HTMLInputElement>("[data-regex-toggle]")!;
+    toggle.checked = regex;
+    toggle.dispatchEvent(new Event("change"));
+    return {
+      editor,
+      replace: document.querySelector<HTMLButtonElement>("[data-replace-next]")!,
+      status: document.querySelector<HTMLElement>("[data-find-status]")!,
+    };
+  }
+
+  it("replaces and advances on the first and subsequent clicks, then supports undo", async () => {
+    const { editor, replace, status } = await setupReplace("one one one", "one", "1");
+    replace.click();
+    expect(editor.value).toBe("1 one one");
+    expect([editor.selectionStart, editor.selectionEnd]).toEqual([2, 5]);
+    expect(document.activeElement).toBe(editor);
+    expect(status.textContent).toBe("Replaced one match. Next match found.");
+    replace.click();
+    expect(editor.value).toBe("1 1 one");
+    expect([editor.selectionStart, editor.selectionEnd]).toEqual([4, 7]);
+    editor.dispatchEvent(new KeyboardEvent("keydown", { key: "z", metaKey: true, bubbles: true }));
+    expect(editor.value).toBe("1 one one");
+  });
+
+  it("replaces the active last match and wraps to the first", async () => {
+    const { editor, replace, status } = await setupReplace("one one", "one", "1");
+    editor.setSelectionRange(4, 4);
+    document.querySelector<HTMLButtonElement>("[data-find-next]")!.click();
+    replace.click();
+    expect(editor.value).toBe("one 1");
+    expect([editor.selectionStart, editor.selectionEnd]).toEqual([0, 3]);
+    expect(status.textContent).toBe("Replaced one match. Wrapped to the first match.");
+  });
+
+  it.each([
+    ["longer", "one one", "one", "lengthened", false, "lengthened one", 11, 14],
+    ["shorter", "one one", "one", "x", false, "x one", 2, 5],
+    ["empty", "oneone", "one", "", false, "one", 0, 3],
+    ["unchanged", "one one", "one", "one", false, "one one", 4, 7],
+    ["captures", "a1 b2", "([a-z])(\\d)", "$2$1", true, "1a b2", 3, 5],
+    ["zero-length insertion", "aa", "(?=a)", "x", true, "xaa", 2, 2],
+    ["zero-length unchanged", "aa", "(?=a)", "", true, "aa", 1, 1],
+    ["EOF wrap", "a", "$", "x", true, "ax", 2, 2],
+  ])("advances correctly for %s replacements", async (_label, value, query, replacement, regex, expected, start, end) => {
+    const { editor, replace } = await setupReplace(value, query, replacement, regex);
+    replace.click();
+    expect(editor.value).toBe(expected);
+    expect([editor.selectionStart, editor.selectionEnd]).toEqual([start, end]);
+    expect(document.activeElement).toBe(editor);
+  });
+
+  it("can select replacement text again after wrapping", async () => {
+    const { editor, replace, status } = await setupReplace("one", "one", "one");
+    replace.click();
+    expect([editor.selectionStart, editor.selectionEnd]).toEqual([0, 3]);
+    expect(status.textContent).toContain("Wrapped to the first match.");
+  });
+
+  it("leaves the cursor at the replacement end when no matches remain", async () => {
+    const { editor, replace, status } = await setupReplace("one", "one", "zero");
+    replace.click();
+    expect(editor.value).toBe("zero");
+    expect([editor.selectionStart, editor.selectionEnd]).toEqual([4, 4]);
+    expect(document.activeElement).toBe(editor);
+    expect(status.textContent).toBe("Replaced one match. No matches remaining.");
+  });
+
+  it.each([
+    ["[", true, "Invalid regular expression."],
+    ["", false, "Enter text to find."],
+    ["missing", false, "No matches found."],
+  ])("does not replace for query %s", async (query, regex, message) => {
+    const { editor, replace, status } = await setupReplace("one", query, "x", regex);
+    replace.click();
+    expect(editor.value).toBe("one");
+    expect(status.textContent).toBe(message);
+  });
+
   it("cleans whitespace through its shortcut and keeps the edit undoable", async () => {
     await mountApp(document, window);
 

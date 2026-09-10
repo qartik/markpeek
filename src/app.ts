@@ -372,10 +372,9 @@ export async function mountApp(
     editor.focus({ preventScroll: true });
   }
 
-  function findAndSelect(): FindMatch | null {
-    const from = currentMatch
+  function findAndSelect(from = currentMatch
       ? currentMatch.end + Number(currentMatch.start === currentMatch.end)
-      : editor.selectionEnd;
+      : editor.selectionEnd): FindMatch | null {
     const result = findNext(editor.value, findInput.value, regexToggle.checked, from);
     if (!result.ok) {
       setFindStatus(result.error);
@@ -406,9 +405,15 @@ export async function mountApp(
       match,
     );
     const replacementLength = replacement.length - editor.value.length + match.end - match.start;
-    applyEditorValue(replacement, match.start, match.start + replacementLength);
-    currentMatch = null;
-    setFindStatus("Replaced one match.");
+    const replacementEnd = match.start + replacementLength;
+    applyEditorValue(replacement, replacementEnd, replacementEnd);
+    const nextMatch = findAndSelect(replacementEnd + Number(match.start === match.end));
+    editor.focus({ preventScroll: true });
+    setFindStatus(nextMatch
+      ? nextMatch.wrapped
+        ? "Replaced one match. Wrapped to the first match."
+        : "Replaced one match. Next match found."
+      : "Replaced one match. No matches remaining.");
   }
 
   function replaceEveryMatch(): void {
